@@ -1,14 +1,17 @@
-import git
 import os
 import tempfile
 import shutil
 import zipfile
-import apim_core
+
+import git
+
+from . import apim_core
+
 
 def apim_update(base_dir):
     if not base_dir.endswith(os.sep):
         base_dir = base_dir + os.sep
-    print "Checking configuration..."
+    print("Checking configuration...")
 
     apim = apim_core.create_azure_apim(base_dir)
     instance = 'apim'
@@ -17,31 +20,31 @@ def apim_update(base_dir):
     properties_file = os.path.join(base_dir, 'properties.json')
     if os.path.isfile(properties_file):
         if not apim.upsert_properties_from_file(instance, properties_file):
-            print "Upserting properties failed."
+            print("Upserting properties failed.")
             return False
-        print "Update of properties succeeded."
+        print("Update of properties succeeded.")
     else:
-        print "Skipping properties, could not find 'properties.json'."
+        print("Skipping properties, could not find 'properties.json'.")
     
     # Check for certificates
     certificates_file = os.path.join(base_dir, 'certificates.json')
     if os.path.isfile(certificates_file):
         if not apim.upsert_certificates_from_file(instance, certificates_file):
-            print "Upserting certificates failed."
+            print("Upserting certificates failed.")
             return False
-        print "Update of certificates succeeded."
+        print("Update of certificates succeeded.")
     else:
-        print "Skipping certificates, could not find 'certificates.json'."
+        print("Skipping certificates, could not find 'certificates.json'.")
         
     # Check for Swagger files
     swaggerfiles_file = os.path.join(base_dir, 'swaggerfiles.json')
     if os.path.isfile(swaggerfiles_file):
         if not apim.update_swagger_from_file(instance, swaggerfiles_file):
-            print "Updating Swagger API definitions failed."
+            print("Updating Swagger API definitions failed.")
             return False
-        print "Update of APIs via Swagger definitions succeeded."
+        print("Update of APIs via Swagger definitions succeeded.")
     else:
-        print "Skipping Swagger update, could not find 'swaggerfiles.json'."
+        print("Skipping Swagger update, could not find 'swaggerfiles.json'.")
     
     # Room for more things (backends?)
 
@@ -54,7 +57,7 @@ def apim_extract(base_dir, target_zip):
     if target_zip.endswith('.zip'):
         target_zip = target_zip[:-4] # strip .zip
 
-    print "Checking configuration..."
+    print("Checking configuration...")
 
     config_files = [
         'instances.json',
@@ -67,12 +70,12 @@ def apim_extract(base_dir, target_zip):
     instance = "apim"
 
     apim = apim_core.create_azure_apim(base_dir)
-    print "Telling APIm to store configuration to git..."
+    print("Telling APIm to store configuration to git...")
     if not apim.git_save(instance, 'master'):
-        print "Failed."
+        print("Failed.")
         return False
 
-    #repo = git.Repo.clone_from('https://github.com/apisio/apis.io.git', '~/Temp/new_repo', branch='master')
+    # repo = git.Repo.clone_from('https://github.com/apisio/apis.io.git', '~/Temp/new_repo', branch='master')
     scm_user = 'apim'
     scm_password = apim.get_token_factory().get_scm_sas_token(instance)
     scm_host = apim.get_token_factory().get_scm_url(instance)
@@ -80,14 +83,14 @@ def apim_extract(base_dir, target_zip):
     git_temp = tempfile.mkdtemp()
 
     try:
-        print "Cloning repository to temporary path..."
-        print "Temp path: " + git_temp
+        print("Cloning repository to temporary path...")
+        print("Temp path: " + git_temp)
         apim_path = os.path.join(git_temp, 'azureapim.scm')
         repo = git.Repo.clone_from(
             'https://' + scm_user + ':' + scm_password + '@' + scm_host,
             apim_path
         )
-        print "git clone done."
+        print("git clone done.")
         shutil.rmtree(os.path.join(apim_path, '.git')) # remove git folder
 
         for config_file in config_files:
@@ -95,13 +98,13 @@ def apim_extract(base_dir, target_zip):
             if os.path.isfile(full_path):
                 shutil.copyfile(full_path, os.path.join(git_temp, config_file))
 
-        print "Creating archive."
+        print("Creating archive.")
         shutil.make_archive(target_zip, format='zip', root_dir=git_temp)
         
     finally:
         shutil.rmtree(git_temp)
 
-    print "Operation finished successfully."
+    print("Operation finished successfully.")
     return True
 
 def apim_extract_properties(base_dir):
@@ -109,9 +112,9 @@ def apim_extract_properties(base_dir):
     apim = apim_core.create_azure_apim(base_dir)
     properties_file = os.path.join(base_dir, 'properties_extracted.json')
     if not apim.extract_properties_to_file("apim", properties_file):
-        print "Property extraction failed."
+        print("Property extraction failed.")
         return False
-    print "Property extraction succeeded."
+    print("Property extraction succeeded.")
     return True
     
 def apim_extract_certificates(base_dir):
@@ -119,9 +122,9 @@ def apim_extract_certificates(base_dir):
     apim = apim_core.create_azure_apim(base_dir)
     certificates_file = os.path.join(base_dir, 'certificates_extracted.json')
     if not apim.extract_certificates_to_file("apim", certificates_file):
-        print "Certificate extraction failed."
+        print("Certificate extraction failed.")
         return False
-    print "Certificate extraction succeeded."
+    print("Certificate extraction succeeded.")
     return True
     
 def apim_extract_swaggerfiles(base_dir):
@@ -132,25 +135,25 @@ def apim_extract_swaggerfiles(base_dir):
     if not os.path.exists(swaggerfiles_localdir):
         os.makedirs(swaggerfiles_localdir)
     if not apim.extract_swaggerfiles_to_file("apim", swaggerfiles_file, 'local_swaggerfiles'):
-        print "Swaggerfiles extraction failed."
+        print("Swaggerfiles extraction failed.")
         return False
-    print "Swagger files extraction succeeded."
+    print("Swagger files extraction succeeded.")
     return True
 
 def apim_deploy(source_zip):
     config_tmp = tempfile.mkdtemp()
     git_tmp = tempfile.mkdtemp()
 
-    #print "Work in progress. Comment out to test."
+    #print("Work in progress. Comment out to test."
     #return False
 
     try:
         # Extract ZIP file
         if not os.path.isfile(source_zip):
-            print "Could not read source zip file '" + source_zip + "'."
+            print("Could not read source zip file '" + source_zip + "'.")
             return False
         
-        print "Unzipping configuration file to '" + config_tmp + "'."
+        print("Unzipping configuration file to '" + config_tmp + "'.")
         zip_file = zipfile.ZipFile(source_zip, 'r')
         try:
             zip_file.extractall(config_tmp)
@@ -162,16 +165,16 @@ def apim_deploy(source_zip):
         swaggerfiles_json = os.path.join(config_tmp, 'swaggerfiles.json')
         if os.path.isfile(swaggerfiles_json):
             os.remove(swaggerfiles_json)
-        print "Updating certificates and properties..."
+        print("Updating certificates and properties...")
         apim_update(config_tmp)
         
         # Save current config to git
         instance = "apim"
 
         apim = apim_core.create_azure_apim(config_tmp)
-        print "Telling APIm to store configuration to git..."
+        print("Telling APIm to store configuration to git...")
         if not apim.git_save(instance, 'master'):
-            print "Failed."
+            print("Failed.")
             return False
         
         # Clone to local dir
@@ -179,12 +182,12 @@ def apim_deploy(source_zip):
         scm_password = apim.get_token_factory().get_scm_sas_token(instance)
         scm_host = apim.get_token_factory().get_scm_url(instance)
         
-        print "Cloning repository to '" + git_tmp + "'."
+        print("Cloning repository to '" + git_tmp + "'.")
         repo = git.Repo.clone_from(
             'https://' + scm_user + ':' + scm_password + '@' + scm_host,
             git_tmp
         )
-        print "git clone done."
+        print("git clone done.")
         
         # Overwrite config with content from ZIP file
         git_apim = os.path.join(git_tmp, 'api-management')
@@ -193,7 +196,7 @@ def apim_deploy(source_zip):
         shutil.copytree(config_apim, git_apim)
         
         # Push the changes to the APIm git repo
-        print "Push changes to upstream repo."
+        print("Push changes to upstream repo.")
         git_repo = repo.git
         # Do we have differences?
         diffs = repo.index.diff(None)
@@ -209,10 +212,10 @@ def apim_deploy(source_zip):
             # Deploy git configuration to upstream repo
             apim.git_deploy(instance, 'master')
         else:
-            print "Remote repository is already up to date. No push needed."
+            print("Remote repository is already up to date. No push needed.")
         
     finally:
-        print "Cleaning up."
+        print("Cleaning up.")
         shutil.rmtree(config_tmp)
         #shutil.rmtree(git_tmp)
             

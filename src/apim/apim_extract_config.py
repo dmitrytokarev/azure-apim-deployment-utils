@@ -1,10 +1,11 @@
 import sys
-import apim_commands
+
+from . import apim_commands
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print "Usage:"
-        print "  python apim_extract_config.py <config dir> [list of <all|swagger|properties|certificates>]"
+        print("Usage:")
+        print("  python apim_extract_config.py <config dir> [list of <all|swagger|properties|certificates>]")
         sys.exit(1)
     
     base_dir = sys.argv[1]

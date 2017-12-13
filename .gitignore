@@ -1,2 +1,6 @@
 .DS_Store
 bin
+*.pyc
+
+# IntelliJ IDEA and PyCharm files
+.idea/
